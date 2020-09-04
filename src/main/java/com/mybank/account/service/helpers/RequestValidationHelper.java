@@ -10,7 +10,7 @@ import com.mybank.account.exception.ValidationException;
 public class RequestValidationHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(RequestValidationHelper.class);
 
-    public void validateAccountId(long accountId) throws ValidationException {
+    public boolean validateAccountId(long accountId) throws ValidationException {
         LOGGER.info("BalaceCheck Request - Validating request payload- accountId: {}", accountId);
         if(accountId < 1){
             LOGGER.warn("BalaceCheck Request - Validation failed- Invalid accountId: {} ", accountId);
@@ -18,6 +18,6 @@ public class RequestValidationHelper {
                     ValidationException.ValidationError.INVALID_ACCOUNT_ID);
         }
         LOGGER.info("BalaceCheck Request - validation success for accountId: {}", accountId);
-
+        return true;
     }
 }

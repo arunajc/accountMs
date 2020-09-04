@@ -1,20 +1,5 @@
 package com.mybank.account.service;
 
-import java.math.BigDecimal;
-import java.util.Optional;
-import java.util.Random;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.retry.annotation.Recover;
-import org.springframework.stereotype.Service;
-
 import com.mybank.account.constants.AccountConstants;
 import com.mybank.account.entity.AccountDetailsEntity;
 import com.mybank.account.exception.AccountLockException;
@@ -29,6 +14,20 @@ import com.mybank.account.model.TransactionDetails;
 import com.mybank.account.repository.AccountRepository;
 import com.mybank.account.service.helpers.AccountDetailsTransformation;
 import com.mybank.account.service.helpers.RequestValidationHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class AccountServiceImpl implements AccountService{
@@ -48,7 +47,7 @@ public class AccountServiceImpl implements AccountService{
 	KafkaTemplate<String, TransactionDetails> kafkaTemplate;
 
 	@Value("${mybank.kafka.transaction.topic}")
-	private String transactionKafkaTopic;
+	protected String transactionKafkaTopic;
 
 	@Override
 	public AccountDetails createAccount(AccountDetails accountDetails) throws GeneralException{
@@ -65,7 +64,7 @@ public class AccountServiceImpl implements AccountService{
 
 			AccountDetailsEntity accountDetailsEntity = accountRepository
 					.save(accountDetailsTransformation.convertAccountDetailsToEntity(accountDetails));
-			LOGGER.info("User account created successfully: user:{}, accountId: {}", 
+			LOGGER.info("User account created successfully: user:{}, accountId: {}",
 					accountDetailsEntity.getUserName(), accountDetailsEntity.getAccountId());
 
 			accountDetailsResponse = accountDetailsTransformation.convertAccountDetailsEntitytoDTO(accountDetailsEntity);
@@ -78,7 +77,7 @@ public class AccountServiceImpl implements AccountService{
 
 
 	@Override
-	public TransactionDetails doTransaction(TransactionDetails transactionDetails) 
+	public TransactionDetails doTransaction(TransactionDetails transactionDetails)
 			throws ValidationException, AccountLockException, AccountTransactionException, GeneralException {
 
 		boolean lockTaken = false;
@@ -98,7 +97,7 @@ public class AccountServiceImpl implements AccountService{
 
 			//get lock
 			int rowsUpdated = accountRepository.lockorUnlockAccount(accountId, 1, 0);
-			LOGGER.info("Locking account for transaction. Rows updated:{}, AccountId: {}", 
+			LOGGER.info("Locking account for transaction. Rows updated:{}, AccountId: {}",
 					rowsUpdated, accountId);
 			if(rowsUpdated == 0) {
 				LOGGER.warn("Could not get lock for transaction (Retry will be done)- AccountId: {}",
@@ -115,7 +114,7 @@ public class AccountServiceImpl implements AccountService{
 			LOGGER.info("TransactionId generated. accountId: {}, transactionId: {}", accountId, transactionId);
 
 			//validate - Debit: sufficient balance?
-			Optional<AccountDetailsEntity> accountDetailsEntityOp = 
+			Optional<AccountDetailsEntity> accountDetailsEntityOp =
 					accountRepository.findById(accountId);
 			AccountDetailsEntity accountDetailsEntity = accountDetailsEntityOp.get();
 
@@ -152,7 +151,7 @@ public class AccountServiceImpl implements AccountService{
 
 		} catch(Exception ex) {
 			LOGGER.error("Error while saving transaction. AccountId: {}", transactionDetails.getAccountId(), ex);
-			if(ex instanceof AccountTransactionException || 
+			if(ex instanceof AccountTransactionException ||
 					ex instanceof AccountLockException ||
 					ex instanceof ValidationException) {
 				throw ex;
@@ -160,6 +159,10 @@ public class AccountServiceImpl implements AccountService{
 			if(lockTaken) {
 				releaseAccountLock(transactionDetails.getAccountId());
 			}
+
+			transactionDetails.setStatus(AccountConstants.TRANSACTION_STATUS_FAILED);
+			transactionDetails.setDescription(GeneralError.UNEXPECTED_ERROR.getMessage());
+			publishTransaction(transactionDetails);
 			throw new GeneralException(GeneralError.UNEXPECTED_ERROR);
 
 		}
@@ -170,7 +173,7 @@ public class AccountServiceImpl implements AccountService{
 	}
 
 	@Recover
-	public void recoverAccountLockException(AccountLockException ale, TransactionDetails transactionDetails) 
+	public void recoverAccountLockException(AccountLockException ale, TransactionDetails transactionDetails)
 			throws AccountLockException {
 		LOGGER.warn("Could not get lock for transaction (Retry completed)- AccountId: {}, transactionId: {}",
 				transactionDetails.getAccountId(), transactionDetails.getTransactionId());
@@ -187,7 +190,7 @@ public class AccountServiceImpl implements AccountService{
 
 	private String generateTransactionId(String transactionType) {
 
-		Random random = new Random();    
+		Random random = new Random();
 		long n = (long) (1000000000L + random.nextFloat() * 9000000000L);
 
 		return transactionType + n;
@@ -198,6 +201,7 @@ public class AccountServiceImpl implements AccountService{
 
 		LOGGER.info("Start publish tranactionDetails to transactionMs- AccountId: {}, transactionId: {}",
 				transactionDetails.getAccountId(), transactionDetails.getTransactionId());
+
 		Message<TransactionDetails> kafkaMessage = MessageBuilder
 				.withPayload(transactionDetails)
 				.setHeader(KafkaHeaders.TOPIC, transactionKafkaTopic)
@@ -217,7 +221,7 @@ public class AccountServiceImpl implements AccountService{
 		try {
 			requestValidationHelper.validateAccountId(accountId);
 
-			Optional<AccountDetailsEntity> accountDetailsEntityOp = 
+			Optional<AccountDetailsEntity> accountDetailsEntityOp =
 					accountRepository.findById(accountId);
 			accountDetailsEntity = accountDetailsEntityOp.get();
 		} catch(Exception ex) {

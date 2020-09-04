@@ -1,8 +1,13 @@
 package com.mybank.account.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -14,8 +19,12 @@ import com.mybank.account.exception.GeneralException;
 import com.mybank.account.exception.ValidationException;
 import com.mybank.account.model.Error;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @ControllerAdvice
 public class AccountErrorHandler {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccountErrorHandler.class);
 
     @Autowired
     ObjectMapper objectMapper;
@@ -56,6 +65,30 @@ public class AccountErrorHandler {
         Error error = new Error("VALIDATION-001",
                 validationException.getMessage());
 
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseBody
+    public ResponseEntity<Error> handleMethodArgumentExceptions(
+            MethodArgumentNotValidException ex) {
+        LOGGER.warn("Input payload validation failed");
+        Map<String, String> validationFailedFields = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            validationFailedFields.put(fieldName, errorMessage);
+        });
+
+        String description = "Failed to get validation failure message";
+        try {
+            description = objectMapper.writeValueAsString(validationFailedFields);
+        } catch (JsonProcessingException e) {
+            LOGGER.warn("Could not extract the validation failure reason- ", e);
+        }
+        LOGGER.warn("Input payload validation failed. Reason(s): {}", description);
+
+        Error error = new Error("VALIDATION-002", description);
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
