@@ -1,8 +1,9 @@
 package com.mybank.account.config;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.mybank.account.model.TransactionDetails;
+import io.jaegertracing.internal.samplers.ConstSampler;
+import io.opentracing.Tracer;
+import io.opentracing.contrib.kafka.spring.TracingProducerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -14,11 +15,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.stereotype.Component;
 
-import com.mybank.account.model.TransactionDetails;
-
-import io.jaegertracing.internal.samplers.ConstSampler;
-import io.opentracing.Tracer;
-import io.opentracing.contrib.kafka.spring.TracingProducerFactory;
+import java.util.HashMap;
+import java.util.Map;
 
 @EnableKafka
 @Configuration
