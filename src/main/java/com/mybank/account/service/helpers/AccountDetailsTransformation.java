@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class AccountDetailsTransformation {
     private static final Logger LOGGER = LoggerFactory.getLogger(AccountDetailsTransformation.class);
 
-    @Value("${customer.creation.user:CustomerMs}")
+    @Value("${account.creation.user:AccountMs}")
     public String creationUser;
 
     public AccountDetailsEntity convertAccountDetailsToEntity(AccountDetails accountDetails){

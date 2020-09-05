@@ -1,5 +1,11 @@
 package com.mybank.account.service;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mybank.account.entity.AccountDetailsEntity;
 import com.mybank.account.exception.AccountLockException;
 import com.mybank.account.exception.AccountTransactionException;
@@ -23,6 +29,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.Message;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -44,9 +51,20 @@ public class AccountServiceImplTest {
     AccountDetailsTransformation accountDetailsTransformation = new AccountDetailsTransformation();
 
     @Mock
-    KafkaTemplate<String, TransactionDetails> kafkaTemplate;
+    KafkaTemplate<Long, Map<String, Object>> kafkaTemplate;
 
     private String transactionKafkaTopic = "Kafka_Topic";
+
+    private ObjectMapper objectMapper(){
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        objectMapper.enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES);
+        objectMapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.registerModule(new JavaTimeModule());
+
+        return objectMapper;
+    }
 
     @Before
     public void setUp() {
@@ -56,6 +74,7 @@ public class AccountServiceImplTest {
         accountService.accountDetailsTransformation = accountDetailsTransformation;
         accountService.kafkaTemplate = kafkaTemplate;
         accountService.transactionKafkaTopic = transactionKafkaTopic;
+        accountService.objectMapper = objectMapper();
     }
 
     @Test

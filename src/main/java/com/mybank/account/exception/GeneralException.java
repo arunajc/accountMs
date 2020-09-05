@@ -25,7 +25,7 @@ public class GeneralException extends Exception{
     }
 
     public GeneralException(GeneralError generalError){
-        this.message = generalError.toString();
+        this.message = generalError.getMessage();
     }
 
 	/**

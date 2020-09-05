@@ -54,12 +54,12 @@ public class KafkaConfig {
 	KafkaConfigProps configProps;
 
 	@Bean
-	public ProducerFactory<String, TransactionDetails> producerFactory() {
+	public ProducerFactory<Long, Map<String, Object>> producerFactory() {
 		return new TracingProducerFactory<>(new DefaultKafkaProducerFactory<>((Map)configProps.getProps()), tracer());
 	}
 
 	@Bean
-	KafkaTemplate<String, TransactionDetails> kafkaTemplate(){
+	KafkaTemplate<Long, Map<String, Object>> kafkaTemplate(){
 		return new KafkaTemplate<>(producerFactory());
 	}
 

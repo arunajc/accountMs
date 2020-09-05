@@ -1,5 +1,7 @@
 package com.mybank.account.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mybank.account.constants.AccountConstants;
 import com.mybank.account.entity.AccountDetailsEntity;
 import com.mybank.account.exception.AccountLockException;
@@ -26,6 +28,7 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
@@ -44,10 +47,13 @@ public class AccountServiceImpl implements AccountService{
 	AccountDetailsTransformation accountDetailsTransformation;
 
 	@Autowired
-	KafkaTemplate<String, TransactionDetails> kafkaTemplate;
+	KafkaTemplate<Long, Map<String, Object>> kafkaTemplate;
 
 	@Value("${mybank.kafka.transaction.topic}")
 	protected String transactionKafkaTopic;
+
+	@Autowired
+	ObjectMapper objectMapper;
 
 	@Override
 	public AccountDetails createAccount(AccountDetails accountDetails) throws GeneralException{
@@ -202,8 +208,11 @@ public class AccountServiceImpl implements AccountService{
 		LOGGER.info("Start publish tranactionDetails to transactionMs- AccountId: {}, transactionId: {}",
 				transactionDetails.getAccountId(), transactionDetails.getTransactionId());
 
-		Message<TransactionDetails> kafkaMessage = MessageBuilder
-				.withPayload(transactionDetails)
+		Map<String, Object> transactionDetailsMap =
+				objectMapper.convertValue(transactionDetails, new TypeReference<Map<String, Object>>() {});
+
+		Message<Map<String, Object>> kafkaMessage = MessageBuilder
+				.withPayload(transactionDetailsMap)
 				.setHeader(KafkaHeaders.TOPIC, transactionKafkaTopic)
 				.setHeader(KafkaHeaders.MESSAGE_KEY, transactionDetails.getAccountId())
 				.build();
