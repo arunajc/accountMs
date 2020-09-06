@@ -135,7 +135,7 @@ public class AccountApiImplTest {
     }
 
     @Test
-    public void checkBalance_success() throws ValidationException, GeneralException {
+    public void checkBalance_success() throws ValidationException, GeneralException, AccountTransactionException {
         long accountId = 123456789;
         AccountDetails accountDetails = new AccountDetails();
         accountDetails.setAccountId(accountId);
@@ -156,7 +156,7 @@ public class AccountApiImplTest {
     }
 
     @Test(expected = ValidationException.class)
-    public void checkBalance_ValidationException() throws ValidationException, GeneralException {
+    public void checkBalance_ValidationException() throws ValidationException, GeneralException, AccountTransactionException {
         AccountDetails accountDetails = new AccountDetails();
         accountDetails.setUserName("cust1");
         accountDetails.setBalance(new BigDecimal(1000.25));
@@ -170,7 +170,7 @@ public class AccountApiImplTest {
     }
 
     @Test(expected = GeneralException.class)
-    public void checkBalance_GeneralException() throws ValidationException, GeneralException {
+    public void checkBalance_GeneralException() throws ValidationException, GeneralException, AccountTransactionException {
         long accountId = 123456789;
         AccountDetails accountDetails = new AccountDetails();
         accountDetails.setAccountId(accountId);

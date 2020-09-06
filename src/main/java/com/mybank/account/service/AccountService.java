@@ -21,5 +21,5 @@ public interface AccountService {
 	TransactionDetails doTransaction(TransactionDetails transactionDetails) 
 			throws AccountLockException, AccountTransactionException, GeneralException, ValidationException;
 
-	AccountDetails checkBalance(long accountId) throws ValidationException, GeneralException;
+	AccountDetails checkBalance(long accountId) throws ValidationException, GeneralException, AccountTransactionException;
 }

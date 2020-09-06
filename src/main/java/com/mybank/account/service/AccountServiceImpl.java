@@ -55,6 +55,8 @@ public class AccountServiceImpl implements AccountService{
 	@Autowired
 	ObjectMapper objectMapper;
 
+	Random random = new Random();
+
 	@Override
 	public AccountDetails createAccount(AccountDetails accountDetails) throws GeneralException{
 
@@ -195,8 +197,6 @@ public class AccountServiceImpl implements AccountService{
 	}
 
 	private String generateTransactionId(String transactionType) {
-
-		Random random = new Random();
 		long n = (long) (1000000000L + random.nextFloat() * 9000000000L);
 
 		return transactionType + n;
@@ -223,7 +223,8 @@ public class AccountServiceImpl implements AccountService{
 	}
 
 	@Override
-	public AccountDetails checkBalance(long accountId) throws ValidationException, GeneralException {
+	public AccountDetails checkBalance(long accountId)
+			throws AccountTransactionException, ValidationException, GeneralException {
 
 		LOGGER.info("Balance check start- AccountId: {}", accountId);
 		AccountDetailsEntity accountDetailsEntity;
@@ -232,10 +233,17 @@ public class AccountServiceImpl implements AccountService{
 
 			Optional<AccountDetailsEntity> accountDetailsEntityOp =
 					accountRepository.findById(accountId);
+
+			if(!accountDetailsEntityOp.isPresent()) {
+				LOGGER.warn("AccountId not found in DB- AccountId: {}", accountId);
+				throw new AccountTransactionException(AccountTransactionError.ACCOUNT_NOT_FOUND);
+			}
+
 			accountDetailsEntity = accountDetailsEntityOp.get();
 		} catch(Exception ex) {
-			LOGGER.error("Error while schecking balance. AccountId: {}", accountId, ex);
-			if(ex instanceof ValidationException) {
+			LOGGER.error("Error while checking balance. AccountId: {}", accountId, ex);
+			if(ex instanceof ValidationException
+			|| ex instanceof AccountTransactionException) {
 				throw ex;
 			}
 			throw new GeneralException(GeneralError.UNEXPECTED_ERROR);

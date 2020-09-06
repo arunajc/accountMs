@@ -268,14 +268,14 @@ public class AccountServiceImplTest {
     }
 
     @Test(expected = ValidationException.class)
-    public void checkBalance_accountId_invalid() throws ValidationException, GeneralException {
+    public void checkBalance_accountId_invalid() throws ValidationException, GeneralException, AccountTransactionException {
 
         accountService.checkBalance(-1);
 
     }
 
     @Test
-    public void checkBalance_success() throws ValidationException, GeneralException {
+    public void checkBalance_success() throws ValidationException, GeneralException, AccountTransactionException {
 
         long accountId= 123456789L;
         Optional<AccountDetailsEntity> optionalAccountDetailsEntity =
@@ -287,9 +287,21 @@ public class AccountServiceImplTest {
         Assert.assertEquals(new BigDecimal(10.00), accountDetails.getBalance());
 
     }
+    @Test(expected = AccountTransactionException.class)
+    public void checkBalance_accountId_not_in_DB() throws ValidationException, GeneralException, AccountTransactionException {
+
+        long accountId= 123456789L;
+        Optional<AccountDetailsEntity> optionalAccountDetailsEntity =
+                Optional.empty();
+        Mockito.when(accountRepository.findById(accountId))
+                .thenReturn(optionalAccountDetailsEntity);
+        AccountDetails accountDetails = accountService.checkBalance(accountId);
+
+    }
+
 
     @Test(expected = GeneralException.class)
-    public void checkBalance_general_error() throws ValidationException, GeneralException {
+    public void checkBalance_general_error() throws ValidationException, GeneralException, AccountTransactionException {
         long accountId= 123456789L;
         Mockito.doThrow(new RuntimeException("db error from Junit"))
                 .when(accountRepository).findById(accountId);

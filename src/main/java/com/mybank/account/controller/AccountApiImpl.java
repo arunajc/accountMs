@@ -37,7 +37,7 @@ public class AccountApiImpl implements AccountApi{
 
 	@Override
 	public ResponseEntity<AccountDetails> checkBalance(long accountId)
-			throws ValidationException, GeneralException {
+			throws AccountTransactionException, ValidationException, GeneralException {
 		AccountDetails accountDetailsResponse = accountService.checkBalance(accountId);
 		return new ResponseEntity<>(accountDetailsResponse, HttpStatus.OK);
 	}

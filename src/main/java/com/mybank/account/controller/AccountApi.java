@@ -53,12 +53,13 @@ public interface AccountApi {
 	@ApiOperation(value="Check account balance", nickname = "balance", tags = {"accountMs"})
 	@ApiResponses(value = {
 			@ApiResponse(code=405, message = "Invalid input"),
+			@ApiResponse(code=409, message = "No account found with given details"),
 			@ApiResponse(code=500, message = "Internal Server Error"),
 			@ApiResponse(code=200, message = "Success")
 	})
 	@GetMapping(value = "/balance", produces = "application/json")
 	ResponseEntity<AccountDetails> checkBalance(
 			@RequestParam(value = "accountId") long accountId
-			) throws ValidationException, GeneralException;
+			) throws ValidationException, GeneralException, AccountTransactionException;
 
 }

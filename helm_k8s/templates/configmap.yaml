@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.metadata.app }}-configmap
+  namespace: {{ .Values.metadata.namespace }}
+  labels:
+    app: {{ .Values.metadata.app }}
+data:
+  {{  (.Files.Glob .Values.configmap.datafolder ).AsConfig | indent 2 }}

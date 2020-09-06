@@ -79,7 +79,7 @@ public class UserDetailsEntity {
 	}
 	@Override
 	public String toString() {
-		return "UserDetailsEntity [username=" + username + ", password=" + password.replaceAll(".", "*") + ", role=" + role + ", enabled="
+		return "UserDetailsEntity [username=" + username + ", role=" + role + ", enabled="
 				+ enabled + "]";
 	}
 	
